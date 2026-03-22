@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chess AI Agent — Architecture & Design Blueprint v1.0</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #20243a;
+    --border: #2e3250;
+    --accent: #6c8efb;
+    --accent2: #a78bfa;
+    --accent3: #34d399;
+    --accent4: #f59e0b;
+    --accent5: #f87171;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --white: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    padding: 24px 16px;
+  }
+
+  /* ── Header ── */
+  .hero {
+    text-align: center;
+    padding: 48px 24px 36px;
+    background: linear-gradient(135deg, #1a1d27 0%, #1e2240 50%, #1a1d27 100%);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+  .hero h1 {
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-weight: 800;
+    background: linear-gradient(90deg, #6c8efb, #a78bfa, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 10px;
+  }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 640px; margin: 0 auto; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    margin: 2px;
+  }
+  .badge-blue { background: rgba(108,142,251,.18); color: #6c8efb; border: 1px solid rgba(108,142,251,.3); }
+  .badge-purple { background: rgba(167,139,250,.18); color: #a78bfa; border: 1px solid rgba(167,139,250,.3); }
+  .badge-green { background: rgba(52,211,153,.18); color: #34d399; border: 1px solid rgba(52,211,153,.3); }
+  .badge-yellow { background: rgba(245,158,11,.18); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+  .badge-red { background: rgba(248,113,113,.18); color: #f87171; border: 1px solid rgba(248,113,113,.3); }
+  .badge-cyan { background: rgba(34,211,238,.18); color: #22d3ee; border: 1px solid rgba(34,211,238,.3); }
+  .badges { margin-top: 16px; }
+
+  /* ── Sections ── */
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2 .icon { font-size: 1.3rem; }
+  section { margin-bottom: 36px; }
+
+  /* ── Arch Diagram ── */
+  .arch {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+
+  /* Layer */
+  .layer {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .layer-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    position: absolute;
+    top: -10px;
+    left: 18px;
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+  .layer-frontend { background: rgba(108,142,251,.07); border-color: rgba(108,142,251,.35); }
+  .layer-frontend .layer-label { background: #1a1d27; color: #6c8efb; }
+  .layer-api { background: rgba(167,139,250,.07); border-color: rgba(167,139,250,.35); }
+  .layer-api .layer-label { background: #1a1d27; color: #a78bfa; }
+  .layer-engine { background: rgba(52,211,153,.07); border-color: rgba(52,211,153,.35); }
+  .layer-engine .layer-label { background: #1a1d27; color: #34d399; }
+  .layer-llm { background: rgba(245,158,11,.07); border-color: rgba(245,158,11,.35); }
+  .layer-llm .layer-label { background: #1a1d27; color: #f59e0b; }
+
+  .arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 1.4rem;
+    margin: 2px 0;
+    line-height: 1;
+  }
+  .arrow-label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    text-align: center;
+    margin: 0 0 4px;
+  }
+
+  /* Box grid inside layers */
+  .box-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .box {
+    flex: 1 1 140px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    min-width: 130px;
+  }
+  .box h4 { font-size: 0.82rem; font-weight: 700; margin-bottom: 4px; }
+  .box p { font-size: 0.74rem; color: var(--muted); }
+  .box.blue h4 { color: #6c8efb; }
+  .box.purple h4 { color: #a78bfa; }
+  .box.green h4 { color: #34d399; }
+  .box.yellow h4 { color: #f59e0b; }
+  .box.red h4 { color: #f87171; }
+  .box.cyan h4 { color: #22d3ee; }
+
+  /* ── Component Tree ── */
+  .tree {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    overflow-x: auto;
+  }
+  .tree .t-app { color: #6c8efb; font-weight: 700; }
+  .tree .t-view { color: #a78bfa; font-weight: 600; }
+  .tree .t-comp { color: #e2e8f0; }
+  .tree .t-hook { color: #34d399; }
+  .tree .t-note { color: #94a3b8; }
+
+  /* ── State Machine ── */
+  .states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .state-box {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    border: 1px solid;
+  }
+  .state-arrow { color: var(--muted); font-size: 1rem; }
+  .state-idle { border-color: rgba(148,163,184,.4); color: #94a3b8; background: rgba(148,163,184,.08); }
+  .state-loaded { border-color: rgba(108,142,251,.4); color: #6c8efb; background: rgba(108,142,251,.08); }
+  .state-analysing { border-color: rgba(245,158,11,.4); color: #f59e0b; background: rgba(245,158,11,.08); }
+  .state-ready { border-color: rgba(52,211,153,.4); color: #34d399; background: rgba(52,211,153,.08); }
+  .state-playing { border-color: rgba(167,139,250,.4); color: #a78bfa; background: rgba(167,139,250,.08); }
+  .state-paused { border-color: rgba(34,211,238,.4); color: #22d3ee; background: rgba(34,211,238,.08); }
+
+  /* ── API Flow ── */
+  .flow-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin-top: 8px;
+  }
+  .flow-table th {
+    background: var(--card2);
+    color: var(--accent2);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(46,50,80,.5);
+    vertical-align: top;
+  }
+  .flow-table tr:last-child td { border-bottom: none; }
+  .flow-table tr:hover td { background: rgba(108,142,251,.05); }
+  .method {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: monospace;
+  }
+  .method.get { background: rgba(52,211,153,.18); color: #34d399; }
+  .method.post { background: rgba(108,142,251,.18); color: #6c8efb; }
+  .method.ws { background: rgba(245,158,11,.18); color: #f59e0b; }
+  .code {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.78rem;
+    color: #a78bfa;
+  }
+
+  /* ── WS Messages ── */
+  .ws-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .ws-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .ws-card h4 { font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; }
+  .ws-card p { font-size: 0.76rem; color: var(--muted); }
+  .ws-card ul { font-size: 0.74rem; color: var(--muted); margin-top: 6px; padding-left: 14px; }
+  .ws-card ul li { margin-bottom: 2px; }
+
+  /* ── Move Categories ── */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .cat-card {
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid;
+  }
+  .cat-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .cat-card .cp { font-size: 0.74rem; font-family: monospace; margin-bottom: 4px; }
+  .cat-card p { font-size: 0.76rem; }
+  .cat-brilliant { border-color: rgba(52,211,153,.5); background: rgba(52,211,153,.08); }
+  .cat-brilliant h4 { color: #34d399; }
+  .cat-brilliant .cp { color: #34d399; }
+  .cat-great { border-color: rgba(108,142,251,.5); background: rgba(108,142,251,.08); }
+  .cat-great h4 { color: #6c8efb; }
+  .cat-great .cp { color: #6c8efb; }
+  .cat-best { border-color: rgba(167,139,250,.5); background: rgba(167,139,250,.08); }
+  .cat-best h4 { color: #a78bfa; }
+  .cat-best .cp { color: #a78bfa; }
+  .cat-good { border-color: rgba(34,211,238,.5); background: rgba(34,211,238,.08); }
+  .cat-good h4 { color: #22d3ee; }
+  .cat-good .cp { color: #22d3ee; }
+  .cat-inaccuracy { border-color: rgba(251,191,36,.5); background: rgba(251,191,36,.08); }
+  .cat-inaccuracy h4 { color: #fbbf24; }
+  .cat-inaccuracy .cp { color: #fbbf24; }
+  .cat-mistake { border-color: rgba(251,146,60,.5); background: rgba(251,146,60,.08); }
+  .cat-mistake h4 { color: #fb923c; }
+  .cat-mistake .cp { color: #fb923c; }
+  .cat-blunder { border-color: rgba(248,113,113,.5); background: rgba(248,113,113,.08); }
+  .cat-blunder h4 { color: #f87171; }
+  .cat-blunder .cp { color: #f87171; }
+
+  /* ── Accuracy ── */
+  .formula-box {
+    background: rgba(108,142,251,.07);
+    border: 1px solid rgba(108,142,251,.3);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.87rem;
+    color: #a78bfa;
+    margin-bottom: 12px;
+  }
+
+  /* ── LLM Options ── */
+  .llm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+  .llm-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .llm-card h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
+  .llm-card p { font-size: 0.77rem; color: var(--muted); margin-bottom: 8px; }
+  .llm-card .pros { font-size: 0.74rem; }
+  .llm-card .pros span { color: #34d399; }
+  .recommended { border-color: rgba(52,211,153,.5); background: rgba(52,211,153,.04); }
+  .recommended h4::after { content: " ★ Recommended"; font-size: 0.65rem; color: #34d399; }
+
+  /* ── Tech Stack ── */
+  .stack-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+  .stack-table th {
+    background: var(--card2);
+    color: var(--muted);
+    padding: 9px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.74rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+  .stack-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(46,50,80,.4);
+  }
+  .stack-table tr:last-child td { border-bottom: none; }
+  .stack-table td:first-child { color: var(--muted); font-size: 0.76rem; }
+  .stack-table td:nth-child(2) { font-weight: 600; color: var(--white); }
+  .stack-table td:nth-child(3) { color: var(--muted); font-size: 0.76rem; }
+
+  /* ── Config ── */
+  .config-block {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.79rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+  }
+  .config-key { color: #6c8efb; }
+  .config-val { color: #a78bfa; }
+  .config-comment { color: #475569; }
+
+  /* ── NFR Table ── */
+  .nfr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+  .nfr-table th {
+    background: var(--card2);
+    color: var(--accent2);
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .nfr-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(46,50,80,.5);
+    vertical-align: top;
+  }
+  .nfr-table tr:last-child td { border-bottom: none; }
+  .nfr-table td:first-child { color: var(--text); font-weight: 500; }
+  .nfr-table td:last-child { color: #34d399; font-family: monospace; font-size: 0.82rem; }
+
+  /* ── Backlog ── */
+  .backlog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .backlog-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .backlog-card h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; color: var(--muted); }
+  .backlog-card p { font-size: 0.77rem; color: var(--muted); }
+
+  /* ── Data Flow sequence ── */
+  .seq {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .seq-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .seq-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 32px;
+  }
+  .seq-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    border: 2px solid;
+  }
+  .seq-connector {
+    width: 2px;
+    height: 28px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+  .seq-content { padding-bottom: 24px; padding-top: 4px; }
+  .seq-content h4 { font-size: 0.88rem; font-weight: 700; margin-bottom: 3px; }
+  .seq-content p { font-size: 0.77rem; color: var(--muted); }
+
+  .card-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 20px;
+  }
+
+  @media (max-width: 600px) {
+    .box { min-width: 110px; }
+    .flow-table { font-size: 0.76rem; }
+    .flow-table th, .flow-table td { padding: 8px 9px; }
+    .states { gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<div class="hero">
+  <h1>♟ KnightVision — Architecture Blueprint v1.0</h1>
+  <p>Phase 1 finalized system design · React + FastAPI + Stockfish + Pluggable LLM · Owner: Sai Chandan</p>
+  <div class="badges">
+    <span class="badge badge-blue">Python 3.11+ Backend</span>
+    <span class="badge badge-purple">React + Vite Frontend</span>
+    <span class="badge badge-green">Stockfish Engine</span>
+    <span class="badge badge-yellow">Pluggable LLM Commentary</span>
+    <span class="badge badge-red">WebSocket Streaming</span>
+    <span class="badge badge-cyan">No Auth · No DB (Phase 1)</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════ ARCHITECTURE DIAGRAM ═══════════════ -->
+<section>
+  <h2><span class="icon">🏗️</span> System Architecture</h2>
+  <div class="arch">
+
+    <!-- Frontend -->
+    <div class="layer layer-frontend">
+      <div class="layer-label">LAYER 1 — Frontend (React + Vite + Tailwind CSS)</div>
+      <div class="box-row" style="margin-top:16px">
+        <div class="box blue">
+          <h4>📋 PGN Upload Panel</h4>
+          <p>PGNDropZone (drag-drop) + PGNTextInput (paste). chess.js parses client-side before upload.</p>
+        </div>
+        <div class="box blue">
+          <h4>♟ ChessBoard</h4>
+          <p>react-chessboard · animated piece moves · best-move arrow overlay · EvalBar (vertical, left of board)</p>
+        </div>
+        <div class="box blue">
+          <h4>⏯ Playback Controls</h4>
+          <p>⏮ ◀ ⏸/▶ ▶ ⏭ · 1s auto-advance · keyboard: ←→ Space Home End · mobile swipe</p>
+        </div>
+        <div class="box blue">
+          <h4>📊 Analysis Panel</h4>
+          <p>MoveList (colour-coded) + MoveDetail (badge, eval, comment, top 3 candidates)</p>
+        </div>
+        <div class="box blue">
+          <h4>📈 Eval Graph</h4>
+          <p>recharts line chart · centipawn score per ply · full-width below board</p>
+        </div>
+        <div class="box blue">
+          <h4>⚙ Settings Panel</h4>
+          <p>LLM provider switcher · Stockfish depth · auto-play speed · persisted in localStorage</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-label">HTTP REST (upload / cached results) + WebSocket (analysis stream)</div>
+    <div class="arrow">↕</div>
+
+    <!-- API Layer -->
+    <div class="layer layer-api">
+      <div class="layer-label">LAYER 2 — Backend API (FastAPI / Python 3.11+)</div>
+      <div class="box-row" style="margin-top:16px">
+        <div class="box purple">
+          <h4>📤 PGN Parser</h4>
+          <p>python-chess · extracts all moves, FEN per ply, game metadata from PGN headers</p>
+        </div>
+        <div class="box purple">
+          <h4>🧠 Analysis Orchestrator</h4>
+          <p>FastAPI BackgroundTasks · coordinates Stockfish + LLM per move · builds MoveAnalysis objects</p>
+        </div>
+        <div class="box purple">
+          <h4>🔌 WebSocket Hub</h4>
+          <p>Streams move_result / progress / complete / error messages as analysis progresses</p>
+        </div>
+        <div class="box purple">
+          <h4>🏷 Move Classifier</h4>
+          <p>cp_loss → Brilliant/Great/Best/Good/Inaccuracy/Mistake/Blunder · thresholds from config.yaml</p>
+        </div>
+        <div class="box purple">
+          <h4>🔄 LLM Adapter Layer</h4>
+          <p>BaseLLMProvider ABC · OllamaProvider / GroqProvider / HuggingFaceProvider · ProviderRegistry</p>
+        </div>
+        <div class="box purple">
+          <h4>📚 Opening Detector</h4>
+          <p>ECO JSON lookup · matches first N half-moves · returns opening name + ECO code (e.g. B90)</p>
+        </div>
+        <div class="box purple">
+          <h4>🗄 Memory Store</h4>
+          <p>Thread-safe Python dict keyed by UUID game_id · no DB · resets on restart (Phase 1)</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-label">subprocess · python-chess UCI protocol</div>
+    <div class="arrow">↕</div>
+
+    <!-- Engine Layer -->
+    <div class="layer layer-engine">
+      <div class="layer-label">LAYER 3 — Chess Engine (Stockfish · Local · No Cost · No Limits)</div>
+      <div class="box-row" style="margin-top:16px">
+        <div class="box green">
+          <h4>♟ Stockfish Binary</h4>
+          <p>GPL-3.0 · auto-downloaded via <code>stockfish</code> PyPI package · long-lived subprocess (not per-move)</p>
+        </div>
+        <div class="box green">
+          <h4>📐 Eval + Best Move</h4>
+          <p>score_cp · best_move_uci · best_move_san · pv (top line) · top 3 candidates via MultiPV</p>
+        </div>
+        <div class="box green">
+          <h4>⚙ Configuration</h4>
+          <p>depth: 18 (default) · threads: 2 · multipv: 3 · all configurable in config.yaml</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-label">httpx async HTTP · OpenAI-compatible REST API</div>
+    <div class="arrow">↕</div>
+
+    <!-- LLM Layer -->
+    <div class="layer layer-llm">
+      <div class="layer-label">LAYER 4 — LLM Commentary (Pluggable · Optional · Fallback-Safe)</div>
+      <div class="box-row" style="margin-top:16px">
+        <div class="box yellow">
+          <h4>🦙 Ollama (Local — Recommended)</h4>
+          <p>llama3.1:8b · localhost:11434 · fully offline, zero cost, no rate limits</p>
+        </div>
+        <div class="box yellow">
+          <h4>⚡ Groq (Cloud Free Tier)</h4>
+          <p>llama-3.1-8b-instant · api.groq.com · 30 req/min, 14,400/day · ultra-fast inference</p>
+        </div>
+        <div class="box yellow">
+          <h4>🤗 HuggingFace Inference</h4>
+          <p>HuggingFaceH4/zephyr-7b-beta · api-inference.huggingface.co · free tier, variable rate limits</p>
+        </div>
+        <div class="box yellow">
+          <h4>🔧 Fallback Provider</h4>
+          <p>Template strings per category · always available · activates on LLM timeout (10s) or error</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ═══════════════ DATA FLOW SEQUENCE ═══════════════ -->
+<section>
+  <h2><span class="icon">🔄</span> Request / Data Flow</h2>
+  <div class="card-wrap">
+    <div class="seq">
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#6c8efb;color:#6c8efb">1</div>
+          <div class="seq-connector"></div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#6c8efb">User uploads PGN</h4>
+          <p>Frontend reads file / paste → validates with chess.js → <strong>POST /api/games/upload</strong> → backend returns <code style="color:#a78bfa">game_id</code> (UUID4) + metadata + total_moves (202 Accepted) → Frontend immediately opens WebSocket <code style="color:#a78bfa">ws://.../ws/games/{game_id}/analysis</code></p>
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#a78bfa;color:#a78bfa">2</div>
+          <div class="seq-connector"></div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#a78bfa">Backend parses PGN + starts background analysis</h4>
+          <p>python-chess extracts all moves, FEN per ply, PGN tag metadata → FastAPI BackgroundTask launches analysis pipeline → MemoryStore stores GameAnalysis object (status: ANALYSING) → WebSocket sends initial <code style="color:#f59e0b">progress</code> message</p>
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#34d399;color:#34d399">3</div>
+          <div class="seq-connector"></div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#34d399">Stockfish evaluates each position</h4>
+          <p>For each ply: send FEN via UCI → get <code style="color:#a78bfa">score_cp</code>, <code style="color:#a78bfa">best_move_uci</code>, <code style="color:#a78bfa">pv</code>, top 3 candidates → compute <code style="color:#a78bfa">cp_loss = max(0, eval_before − eval_after)</code> from mover's perspective · depth 18 default · ~50–200ms per position</p>
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#22d3ee;color:#22d3ee">4</div>
+          <div class="seq-connector"></div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#22d3ee">Opening Detector + Move Classifier</h4>
+          <p>ECO JSON lookup on first N half-moves → attach <code style="color:#a78bfa">opening_name</code> + <code style="color:#a78bfa">opening_eco</code> if applicable · Move Classifier maps cp_loss → category (Brilliant / Great / Best / Good / Inaccuracy / Mistake / Blunder) using config.yaml thresholds · Brilliant requires additional sacrifice/tactic check</p>
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#f59e0b;color:#f59e0b">5</div>
+          <div class="seq-connector"></div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#f59e0b">LLM generates commentary (with fallback)</h4>
+          <p>ProviderRegistry.generate_with_fallback() → asyncio.wait_for(active_provider.generate(prompt), timeout=10s) → if LLM responds: <code style="color:#a78bfa">comment_source="llm"</code> · if timeout/error: template fallback comment, <code style="color:#a78bfa">comment_source="fallback"</code> · analysis never blocked by LLM failure</p>
+        </div>
+      </div>
+
+      <div class="seq-step">
+        <div class="seq-line">
+          <div class="seq-circle" style="border-color:#6c8efb;color:#6c8efb">6</div>
+        </div>
+        <div class="seq-content">
+          <h4 style="color:#6c8efb">WebSocket streams results to frontend</h4>
+          <p>Each completed MoveAnalysis is pushed as <code style="color:#f59e0b">move_result</code> message → frontend updates move list, board, eval bar incrementally → on all moves done: <code style="color:#f59e0b">complete</code> message with GameSummary (accuracy scores, category counts, turning point) → progress bar fills to 100%</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════ FRONTEND COMPONENT TREE ═══════════════ -->
+<section>
+  <h2><span class="icon">🌳</span> Frontend Component Architecture</h2>
+  <div class="tree">
+<span class="t-app">App</span>
+├── <span class="t-view">UploadView</span>                 <span class="t-note"># shown before game is loaded</span>
+│   ├── <span class="t-comp">PGNDropZone</span>            <span class="t-note"># drag-drop + file picker</span>
+│   └── <span class="t-comp">PGNTextInput</span>           <span class="t-note"># paste PGN directly</span>
+│
+└── <span class="t-view">ReviewView</span>                 <span class="t-note"># shown after game is loaded</span>
+    ├── <span class="t-comp">GameHeader</span>             <span class="t-note"># White vs Black, Elo, result, date, accuracy scores</span>
+    ├── <span class="t-comp">OpeningBadge</span>           <span class="t-note"># "B90 · Sicilian: Najdorf Variation"</span>
+    ├── MainLayout                 <span class="t-note"># CSS Grid: board (60%) | analysis panel (40%) desktop</span>
+    │   ├── BoardSection
+    │   │   ├── <span class="t-comp">EvalBar</span>        <span class="t-note"># vertical white/black eval bar (left of board)</span>
+    │   │   ├── <span class="t-comp">ChessBoard</span>     <span class="t-note"># react-chessboard, animated, best-move arrow</span>
+    │   │   └── <span class="t-comp">PlaybackControls</span> <span class="t-note"># ⏮ ◀ ⏸/▶ ▶ ⏭ + move counter</span>
+    │   └── AnalysisPanel
+    │       ├── <span class="t-comp">MoveList</span>       <span class="t-note"># scrollable, colour-coded by category</span>
+    │       └── <span class="t-comp">MoveDetail</span>     <span class="t-note"># current move: badge, eval, comment, top candidates</span>
+    ├── <span class="t-comp">EvalGraph</span>              <span class="t-note"># full-width recharts line chart below board</span>
+    ├── <span class="t-comp">AnalysisStatus</span>         <span class="t-note"># progress bar: "Analysing move 12/54..."</span>
+    └── <span class="t-comp">SettingsPanel</span>          <span class="t-note"># drawer/modal: LLM switcher, Stockfish depth</span>
+
+Hooks (frontend/src/hooks/):
+  <span class="t-hook">usePlayback.ts</span>   <span class="t-note"># playback state machine + keyboard bindings</span>
+  <span class="t-hook">useAnalysis.ts</span>   <span class="t-note"># WebSocket connection + analysis state</span>
+  <span class="t-hook">useSwipe.ts</span>      <span class="t-note"># touch swipe detection for mobile</span>
+  <span class="t-hook">useSettings.ts</span>   <span class="t-note"># LLM provider + settings state</span>
+
+Store:  frontend/src/store/gameStore.ts  <span class="t-note"># Zustand: game state, current move index</span>
+  </div>
+  <p style="color:var(--muted);font-size:0.77rem;margin-top:12px">
+    <strong>Responsive breakpoints:</strong> Desktop ≥1024px: board (60%) + panel (40%) side-by-side · Tablet 640–1023px: board full width, panel below · Mobile &lt;640px: board fills screen width, bottom-sheet analysis panel, swipe navigation
+  </p>
+</section>
+
+
+<!-- ═══════════════ PLAYBACK STATE MACHINE ═══════════════ -->
+<section>
+  <h2><span class="icon">🎮</span> Playback State Machine</h2>
+  <div class="card-wrap">
+    <div class="states">
+      <div class="state-box state-idle">IDLE</div>
+      <div class="state-arrow">→</div>
+      <div class="state-box state-loaded">LOADED</div>
+      <div class="state-arrow">→</div>
+      <div class="state-box state-analysing">ANALYSING</div>
+      <div class="state-arrow">→</div>
+      <div class="state-box state-ready">READY</div>
+      <div class="state-arrow">→</div>
+      <div class="state-box state-playing">PLAYING</div>
+      <div class="state-arrow">⇄</div>
+      <div class="state-box state-paused">PAUSED</div>
+    </div>
+    <table class="flow-table">
+      <thead><tr><th>State</th><th>Description</th><th>Transitions</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:#94a3b8">IDLE</strong></td><td>No game loaded. UploadView shown.</td><td>→ LOADED on successful PGN upload</td></tr>
+        <tr><td><strong style="color:#6c8efb">LOADED</strong></td><td>PGN parsed, game_id received, ReviewView shown.</td><td>→ ANALYSING when WebSocket connects</td></tr>
+        <tr><td><strong style="color:#f59e0b">ANALYSING</strong></td><td>WebSocket streaming results. Progress bar visible. Board interactive.</td><td>→ READY when complete message received</td></tr>
+        <tr><td><strong style="color:#34d399">READY</strong></td><td>Full analysis done. Board at starting position.</td><td>→ PLAYING on play button / Space</td></tr>
+        <tr><td><strong style="color:#a78bfa">PLAYING</strong></td><td>setInterval(1000ms) auto-advances currentMoveIndex. Stops at last move.</td><td>→ PAUSED on Space / prev / next / click</td></tr>
+        <tr><td><strong style="color:#22d3ee">PAUSED</strong></td><td>Best-move arrow shown on board. Full comment in MoveDetail.</td><td>→ PLAYING on Space / play button</td></tr>
+      </tbody>
+    </table>
+    <p style="color:var(--muted);font-size:0.78rem;margin-top:14px">
+      <strong>Keyboard bindings:</strong> <code class="code">ArrowRight</code> next · <code class="code">ArrowLeft</code> prev · <code class="code">Space</code> toggle PLAYING/PAUSED · <code class="code">Home</code> jump to move 0 · <code class="code">End</code> jump to last move
+    </p>
+  </div>
+</section>
+
+
+<!-- ═══════════════ API ENDPOINTS ═══════════════ -->
+<section>
+  <h2><span class="icon">🔌</span> API Endpoints</h2>
+  <div class="card-wrap">
+    <table class="flow-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Endpoint</th>
+          <th>Description</th>
+          <th>Key Response Fields</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td class="code">/api/games/upload</td>
+          <td>Upload PGN (JSON body or multipart file). Starts background analysis.</td>
+          <td class="code">202 → {game_id, status:"pending", total_moves, metadata}</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="code">/api/games/{game_id}</td>
+          <td>Game status + metadata + moves_analysed count</td>
+          <td class="code">200 → {game_id, status, metadata, total_moves, moves_analysed, summary?}</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="code">/api/games/{game_id}/analysis</td>
+          <td>Full cached analysis (best after status=complete)</td>
+          <td class="code">200 → {game_id, status, metadata, moves:[MoveAnalysis], summary}</td>
+        </tr>
+        <tr>
+          <td><span class="method ws">WS</span></td>
+          <td class="code">/ws/games/{game_id}/analysis</td>
+          <td>Stream analysis results move-by-move in real time</td>
+          <td class="code">→ progress | move_result | complete | error (see below)</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="code">/api/llm/providers</td>
+          <td>List all configured LLM providers + availability</td>
+          <td class="code">200 → {providers:[{id, name, is_active, is_available, model, type}], fallback_active}</td>
+        </tr>
+        <tr>
+          <td><span class="method post">POST</span></td>
+          <td class="code">/api/llm/provider</td>
+          <td>Switch active LLM provider at runtime (no restart)</td>
+          <td class="code">body: {provider_id} → {active_provider, status:"switched"|"unavailable_fallback_active", message}</td>
+        </tr>
+        <tr>
+          <td><span class="method get">GET</span></td>
+          <td class="code">/api/health</td>
+          <td>System health check for all components</td>
+          <td class="code">200 → {status:"ok"|"degraded", stockfish, stockfish_depth, llm_provider, llm_status, llm_fallback_active}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:var(--accent2);font-size:0.9rem;font-weight:700;margin-top:20px;margin-bottom:4px">WebSocket Message Types</h3>
+    <div class="ws-grid">
+      <div class="ws-card">
+        <h4 style="color:#f59e0b">progress</h4>
+        <p>Sent every 5 moves as keep-alive / UI progress indicator</p>
+        <ul><li>game_id, moves_done, total_moves</li><li>status: "analysing"</li></ul>
+      </div>
+      <div class="ws-card">
+        <h4 style="color:#6c8efb">move_result</h4>
+        <p>Sent for each completed move — contains full MoveAnalysis object</p>
+        <ul><li>move_index, total_moves</li><li>move: {san, uci, fen_before/after, eval_before/after_cp, cp_loss, best_move, top_candidates, category, category_symbol, comment, comment_source, opening_name?, opening_eco?}</li></ul>
+      </div>
+      <div class="ws-card">
+        <h4 style="color:#34d399">complete</h4>
+        <p>Sent once all moves are done — includes full GameSummary</p>
+        <ul><li>summary: {white_accuracy, black_accuracy, white/black_category_counts, total_moves, turning_point_move_index}</li></ul>
+      </div>
+      <div class="ws-card">
+        <h4 style="color:#f87171">error</h4>
+        <p>Non-fatal — analysis continues. Failed move gets "Good" + fallback comment.</p>
+        <ul><li>message: error description</li><li>move_index: which move failed (optional)</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════ MOVE CATEGORIES ═══════════════ -->
+<section>
+  <h2><span class="icon">🏷️</span> Move Classification System (7-Tier)</h2>
+  <div class="cat-grid">
+    <div class="cat-card cat-brilliant">
+      <h4>!! Brilliant</h4>
+      <div class="cp">cp_loss: 0 (only best move) + sacrifice/tactic</div>
+      <p style="color:#94a3b8">Engine's top move AND involves material sacrifice or deep combination. Requires cp_loss == 0 + sacrifice detection. Rare.</p>
+    </div>
+    <div class="cat-card cat-great">
+      <h4>! Great</h4>
+      <div class="cp">cp_loss: 0–5</div>
+      <p style="color:#94a3b8">Excellent move, significantly stronger than alternatives. Not the only best move.</p>
+    </div>
+    <div class="cat-card cat-best">
+      <h4>✓ Best</h4>
+      <div class="cp">cp_loss: 0–10</div>
+      <p style="color:#94a3b8">Engine's top choice. Objectively optimal or near-optimal. Colour: #a78bfa (purple)</p>
+    </div>
+    <div class="cat-card cat-good">
+      <h4>~ Good</h4>
+      <div class="cp">cp_loss: 10–20</div>
+      <p style="color:#94a3b8">Solid, reasonable move. Keeps advantage or limits damage. Colour: #22d3ee (cyan)</p>
+    </div>
+    <div class="cat-card cat-inaccuracy">
+      <h4>?! Inaccuracy</h4>
+      <div class="cp">cp_loss: 20–50</div>
+      <p style="color:#94a3b8">Slightly suboptimal. Minor positional cost. Colour: #fbbf24 (yellow)</p>
+    </div>
+    <div class="cat-card cat-mistake">
+      <h4>? Mistake</h4>
+      <div class="cp">cp_loss: 50–150</div>
+      <p style="color:#94a3b8">Clear error giving opponent meaningful advantage. Colour: #fb923c (orange)</p>
+    </div>
+    <div class="cat-card cat-blunder">
+      <h4>?? Blunder</h4>
+      <div class="cp">cp_loss: 150+</div>
+      <p style="color:#94a3b8">Severe error. Significant material or positional loss. Colour: #f87171 (red)</p>
+    </div>
+  </div>
+  <p style="color:var(--muted);font-size:0.78rem;margin-top:12px">
+    ⚙ All thresholds stored in <span class="code">config.yaml → classifier.thresholds</span> — adjustable without code changes. Formula: <span class="code">cp_loss = max(0, eval_before − eval_after)</span> where both evals are from the perspective of the player who just moved.
+  </p>
+</section>
+
+
+<!-- ═══════════════ ACCURACY SCORE ═══════════════ -->
+<section>
+  <h2><span class="icon">🎯</span> Accuracy Score (Phase 1 — Confirmed)</h2>
+  <div class="card-wrap">
+    <div class="formula-box">accuracy_percent = 100 − (average_cp_loss / MAX_CP_LOSS_FOR_SCALE × 100)
+
+MAX_CP_LOSS_FOR_SCALE = 300    <span style="color:#475569"># calibrated to match Chess.com scale approximately</span>
+result = clamp(accuracy_percent, 0, 100)</div>
+    <p style="font-size:0.83rem;color:var(--muted)">Computed separately for White and Black after full analysis. Zero additional Stockfish calls — reuses <code class="code">cp_loss</code> values already collected. Adds &lt;1ms to analysis time. Displayed in <code class="code">GameHeader</code> as "White: 61.2% · Black: 78.4%".</p>
+  </div>
+</section>
+
+
+<!-- ═══════════════ LLM OPTIONS ═══════════════ -->
+<section>
+  <h2><span class="icon">🤖</span> LLM Provider Options (All Free · Runtime-Switchable)</h2>
+  <div class="llm-grid">
+
+    <div class="llm-card recommended">
+      <h4 style="color:#34d399">Ollama (Local)</h4>
+      <p>Run Llama 3.1 8B locally via Ollama. No API key, no internet, no cost ever. OpenAI-compatible REST API on localhost:11434.</p>
+      <div class="pros">
+        <span>✓ Fully offline</span> · <span>✓ No rate limits</span> · <span>✓ Private</span><br>
+        Model: <code style="color:#a78bfa">llama3.1:8b</code> · URL: <code style="color:#a78bfa">http://localhost:11434</code>
+      </div>
+    </div>
+
+    <div class="llm-card">
+      <h4 style="color:#f59e0b">Groq (Cloud Free Tier)</h4>
+      <p>Cloud API with ultra-fast inference (~500 tok/s). Free tier: 30 req/min, 14,400 req/day. ~267 full game analyses/day on free tier.</p>
+      <div class="pros">
+        <span style="color:#34d399">✓ Extremely fast</span> · <span style="color:#f87171">✗ Needs internet</span> · API key required<br>
+        Model: <code style="color:#a78bfa">llama-3.1-8b-instant</code>
+      </div>
+    </div>
+
+    <div class="llm-card">
+      <h4 style="color:#6c8efb">HuggingFace Inference</h4>
+      <p>Free serverless inference. Some rate limits. 503 = model loading (still available). Good for model variety testing.</p>
+      <div class="pros">
+        <span style="color:#34d399">✓ Many models</span> · <span style="color:#f87171">✗ Variable speed</span> · API key required<br>
+        Model: <code style="color:#a78bfa">HuggingFaceH4/zephyr-7b-beta</code>
+      </div>
+    </div>
+
+    <div class="llm-card">
+      <h4 style="color:#94a3b8">Template Fallback</h4>
+      <p>Always available. Activates automatically when active LLM times out (10s) or errors. No config needed.</p>
+      <div class="pros">
+        <span style="color:#34d399">✓ 100% reliable</span> · <span style="color:#34d399">✓ Zero latency</span><br>
+        7 templates — one per category, with <code style="color:#a78bfa">{best_move}</code> injected
+      </div>
+    </div>
+
+  </div>
+  <p style="color:var(--muted);font-size:0.78rem;margin-top:12px">
+    <strong>Switching:</strong> POST /api/llm/provider → ProviderRegistry.switch_provider() → no server restart required. Frontend shows toast if switched-to provider is unavailable.
+  </p>
+</section>
+
+
+<!-- ═══════════════ TECH STACK ═══════════════ -->
+<section>
+  <h2><span class="icon">🧰</span> Tech Stack</h2>
+  <div class="card-wrap">
+    <table class="stack-table">
+      <thead>
+        <tr><th>Layer</th><th>Technology / Version</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Frontend Framework</td><td>React 18 + Vite 5</td><td>Fast HMR dev server, SPA, smaller than Next.js for this use case</td></tr>
+        <tr><td>Styling</td><td>Tailwind CSS 3.x</td><td>Mobile-first utility classes, responsive breakpoints, no custom CSS complexity</td></tr>
+        <tr><td>Chess Board UI</td><td>react-chessboard 4.x</td><td>Best-maintained React chess board; supports arrows, highlights, piece animations</td></tr>
+        <tr><td>Chess Logic (FE)</td><td>chess.js 1.x</td><td>PGN parsing, move validation, FEN generation in browser — no backend call for preview</td></tr>
+        <tr><td>Eval Graph</td><td>recharts 2.x</td><td>Lightweight, React-native, area/line chart for centipawn evaluation over game</td></tr>
+        <tr><td>State Management</td><td>Zustand 4.x</td><td>Lightweight, no boilerplate, game state + currentMoveIndex + WebSocket results</td></tr>
+        <tr><td>HTTP Client (FE)</td><td>axios 1.x</td><td>Typed API calls, interceptors, base URL config via VITE_API_BASE_URL env var</td></tr>
+        <tr><td>Backend Framework</td><td>FastAPI + uvicorn[standard] ≥0.111</td><td>Async, native WebSocket support, auto OpenAPI docs, BackgroundTasks for analysis</td></tr>
+        <tr><td>Chess Engine (BE)</td><td>python-chess ≥1.10 + stockfish ≥3.28</td><td>Industry standard UCI protocol; stockfish PyPI auto-downloads platform binary</td></tr>
+        <tr><td>Async HTTP (BE)</td><td>httpx ≥0.27</td><td>Async HTTP for all three LLM providers; same client code works for all OpenAI-compat APIs</td></tr>
+        <tr><td>Data Validation</td><td>pydantic ≥2.7 + pydantic-settings ≥2.3</td><td>Type-safe models for all API schemas and config loading</td></tr>
+        <tr><td>Config</td><td>PyYAML ≥6.0</td><td>config.yaml for Stockfish depth, LLM provider, CP thresholds — user-editable</td></tr>
+        <tr><td>File Upload</td><td>python-multipart ≥0.0.9</td><td>Required by FastAPI for multipart/form-data PGN file upload support</td></tr>
+        <tr><td>Opening Detection</td><td>chess-openings npm OR bundled ECO JSON (~200KB)</td><td>Free ECO database; client-side lookup, no API call needed</td></tr>
+        <tr><td>Dev Environment</td><td>Docker Compose</td><td>Single command to spin up backend + Ollama container for local development</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ═══════════════ CONFIGURATION ═══════════════ -->
+<section>
+  <h2><span class="icon">⚙️</span> Configuration (config.yaml)</h2>
+  <div class="config-block"><span class="config-key">stockfish</span>:
+  <span class="config-key">binary_path</span>: <span class="config-val">null</span>           <span class="config-comment"># null = use stockfish PyPI auto-download</span>
+  <span class="config-key">depth</span>: <span class="config-val">18</span>                   <span class="config-comment"># analysis depth (10–22 recommended)</span>
+  <span class="config-key">threads</span>: <span class="config-val">2</span>                <span class="config-comment"># CPU threads for Stockfish</span>
+  <span class="config-key">multipv</span>: <span class="config-val">3</span>                <span class="config-comment"># number of top candidate moves to return</span>
+
+<span class="config-key">classifier</span>:
+  <span class="config-key">thresholds</span>:
+    <span class="config-key">brilliant_max_cp_loss</span>: <span class="config-val">0</span>    <span class="config-comment"># must also pass sacrifice/tactic detection</span>
+    <span class="config-key">great_max_cp_loss</span>: <span class="config-val">5</span>
+    <span class="config-key">best_max_cp_loss</span>: <span class="config-val">10</span>
+    <span class="config-key">good_max_cp_loss</span>: <span class="config-val">20</span>
+    <span class="config-key">inaccuracy_max_cp_loss</span>: <span class="config-val">50</span>
+    <span class="config-key">mistake_max_cp_loss</span>: <span class="config-val">150</span>
+    <span class="config-comment">    # blunder = anything above mistake threshold</span>
+
+<span class="config-key">llm</span>:
+  <span class="config-key">active_provider</span>: <span class="config-val">"ollama"</span>   <span class="config-comment"># ollama | huggingface | groq</span>
+  <span class="config-key">timeout_seconds</span>: <span class="config-val">10</span>         <span class="config-comment"># max wait before fallback activates</span>
+  <span class="config-key">ollama</span>:
+    <span class="config-key">base_url</span>: <span class="config-val">"http://localhost:11434"</span>
+    <span class="config-key">model</span>: <span class="config-val">"llama3.1:8b"</span>
+  <span class="config-key">groq</span>:
+    <span class="config-key">api_key</span>: <span class="config-val">"${GROQ_API_KEY}"</span>  <span class="config-comment"># from .env file</span>
+    <span class="config-key">model</span>: <span class="config-val">"llama-3.1-8b-instant"</span>
+  <span class="config-key">huggingface</span>:
+    <span class="config-key">api_key</span>: <span class="config-val">"${HF_API_KEY}"</span>    <span class="config-comment"># from .env file</span>
+    <span class="config-key">model</span>: <span class="config-val">"HuggingFaceH4/zephyr-7b-beta"</span>
+
+<span class="config-key">server</span>:
+  <span class="config-key">host</span>: <span class="config-val">"0.0.0.0"</span>
+  <span class="config-key">port</span>: <span class="config-val">8000</span>
+  <span class="config-key">cors_origins</span>:
+    - <span class="config-val">"http://localhost:5173"</span>  <span class="config-comment"># Vite dev server</span>
+    - <span class="config-val">"http://localhost:4173"</span>  <span class="config-comment"># Vite preview</span>
+
+<span class="config-key">accuracy</span>:
+  <span class="config-key">max_cp_scale</span>: <span class="config-val">300</span>          <span class="config-comment"># CP loss at which accuracy = 0%</span></div>
+</section>
+
+
+<!-- ═══════════════ NON-FUNCTIONAL REQUIREMENTS ═══════════════ -->
+<section>
+  <h2><span class="icon">📏</span> Non-Functional Requirements</h2>
+  <div class="card-wrap">
+    <table class="nfr-table">
+      <thead><tr><th>Requirement</th><th>Target</th></tr></thead>
+      <tbody>
+        <tr><td>Analysis time (54-move game, depth 18)</td><td>&lt; 60 seconds on modern laptop</td></tr>
+        <tr><td>Board render / move animation</td><td>&lt; 100ms</td></tr>
+        <tr><td>WebSocket first result delivery</td><td>&lt; 3 seconds after upload</td></tr>
+        <tr><td>Mobile board minimum size</td><td>300 × 300px</td></tr>
+        <tr><td>LLM timeout (before fallback triggers)</td><td>10 seconds</td></tr>
+        <tr><td>Accuracy score computation overhead</td><td>&lt; 1ms (reuses cp_loss values)</td></tr>
+        <tr><td>Browser support</td><td>Chrome 90+, Firefox 90+, Safari 15+, Mobile Safari</td></tr>
+        <tr><td>Opening ECO bundle size</td><td>~200KB (downloaded once, cached)</td></tr>
+        <tr><td>In-memory game store</td><td>No persistence — resets on server restart (Phase 1)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ═══════════════ KEY ARCHITECTURAL DECISIONS ═══════════════ -->
+<section>
+  <h2><span class="icon">📝</span> Key Architectural Decisions</h2>
+  <div class="card-wrap">
+    <table class="flow-table">
+      <thead>
+        <tr><th>Decision</th><th>Rationale</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Pre-compute on upload, not on-demand</strong></td>
+          <td>All Stockfish + LLM analysis runs as a background task immediately after upload. Zero lag during interactive playback. Results streamed via WebSocket as computed.</td>
+        </tr>
+        <tr>
+          <td><strong>WebSocket for streaming, REST for cache</strong></td>
+          <td>WebSocket pushes each MoveAnalysis as it's ready (real-time UX). REST GET for fetching full cached analysis after completion. Polling is explicitly avoided — race conditions during playback.</td>
+        </tr>
+        <tr>
+          <td><strong>LLM Adapter Pattern (BaseLLMProvider ABC)</strong></td>
+          <td>Single abstract interface: <code class="code">generate(prompt) → str</code> + <code class="code">health_check() → bool</code>. Swapping providers = change one config value. ProviderRegistry handles timeout + fallback transparently.</td>
+        </tr>
+        <tr>
+          <td><strong>LLM is optional — always fallback-safe</strong></td>
+          <td>asyncio.wait_for(10s timeout) around every LLM call. On timeout or error → template fallback comment. App fully functional without any LLM. comment_source field tells frontend which was used.</td>
+        </tr>
+        <tr>
+          <td><strong>Stockfish as long-lived subprocess</strong></td>
+          <td>Single Stockfish process managed by python-chess for the analysis session. NOT a new subprocess per move — avoids startup overhead and binary re-download.</td>
+        </tr>
+        <tr>
+          <td><strong>In-memory store (no DB)</strong></td>
+          <td>Python dict keyed by UUID game_id with a threading.Lock for thread safety. append_move() is thread-safe for the background analysis task. Designed for clean DB migration in Phase 2.</td>
+        </tr>
+        <tr>
+          <td><strong>Centipawn loss from mover's perspective</strong></td>
+          <td>eval_before_cp and eval_after_cp are always from the perspective of whoever just moved. cp_loss = max(0, eval_before − eval_after). This normalizes the sign — positive cp_loss is always a deterioration for the mover.</td>
+        </tr>
+        <tr>
+          <td><strong>Opening detection: client-side ECO JSON</strong></td>
+          <td>Bundled ~200KB ECO JSON, no external API. Match first N half-moves against ECO database. Return deepest match. Graceful fallback to "Unknown Opening".</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+
+<!-- ═══════════════ PHASE 2 BACKLOG ═══════════════ -->
+<section>
+  <h2><span class="icon">🗓️</span> Phase 2 Backlog (Out of Scope — Design for Extensibility)</h2>
+  <div class="backlog-grid">
+    <div class="backlog-card">
+      <h4>📚 Multi-game PGN files</h4>
+      <p>Multiple games in one PGN upload. Requires game-selection UI before analysis.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>📄 Export analysis as PDF</h4>
+      <p>Full game report with board diagrams, move comments, accuracy charts. MoveAnalysis data model designed to support this.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>🔗 Share analysis via URL</h4>
+      <p>Shareable links require a persistent DB/Redis layer — explicitly deferred to Phase 2.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>📐 Custom position analysis (FEN)</h4>
+      <p>Paste a FEN string to analyze from any mid-game position.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>📖 Endgame tablebase (Syzygy)</h4>
+      <p>Perfect endgame evaluation for positions with ≤7 pieces via Syzygy tablebase integration.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>✏️ User-configurable LLM prompt</h4>
+      <p>Let users edit the chess coaching prompt template in the Settings panel.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>↔️ Side-by-side game comparison</h4>
+      <p>Compare two versions of the same opening or two games by the same player.</p>
+    </div>
+    <div class="backlog-card">
+      <h4>🤖 Engine vs Engine mode</h4>
+      <p>Watch two Stockfish instances play against each other with live commentary.</p>
+    </div>
+  </div>
+</section>
+
+
+<div style="text-align:center;color:var(--muted);font-size:0.76rem;padding:24px 0 8px">
+  KnightVision — Chess AI Agent · Architecture Blueprint v1.0 · Phase 1 · March 2026 · Sai Chandan
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1 @@
+../../_bmad/bmm/agents/sm.md
