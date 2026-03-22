@@ -1,0 +1,1 @@
+../../_bmad/bmm/agents/quick-flow-solo-dev.md
