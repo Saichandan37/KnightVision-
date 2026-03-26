@@ -17,3 +17,42 @@ In a Vitest test with a mocked WebSocket server, calling `uploadPgn(validPgn)` r
 
 ## Relevant Skills
 Read `.claude/skills/bmad-dev-story.md` before implementing.
+
+---
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**Store-integrated API:** Hook drives the full upload → WS flow. `uploadPgn(pgnText)` POSTs to `/api/analysis/upload`, calls `setGameId`, opens WS, starts stall timer. Returns `{ uploadPgn, analysisStatus, shouldAnimate, cleanup }`. `analysisStatus` is read from Zustand store via selector — components always see live store state.
+
+**`shouldAnimate` flag:** Local `useState` in the hook, only set `true` on live (`buffered=false`) moves. Buffered replay messages do NOT change it. Satisfies AC directly.
+
+**Stall timer reads store directly:** `useAnalysisStore.getState().analysisStatus` inside `setInterval` avoids stale closure — no React re-renders needed to observe state.
+
+**Existing stall tests rewritten:** `useAnalysis.stall.test.tsx` and `useAnalysis.test.tsx` were originally written for the old `useAnalysis('gameId')` API (Story 4.3). Both fully rewritten for the new `uploadPgn`-based API with mocked `fetch` + `MockWebSocket`. All prior stall detection AC coverage preserved.
+
+**`buildWsUrl`:** Respects `VITE_WS_URL` env override; falls back to `wss?://location.host` based on protocol.
+
+### Completion Notes
+✅ All AC gate tests pass. 59 frontend tests pass (2 new AC + 37 supporting + 20 store regressions). 261 backend tests unaffected.
+- `analysisStore.moves.length > 0 after 5 move_result messages` ✓
+- `buffered:true message does not change shouldAnimate` ✓
+
+---
+
+## File List
+- `frontend/src/hooks/useAnalysis.ts` (replaced — store-integrated, uploadPgn-based API)
+- `frontend/src/hooks/__tests__/useAnalysis.ac.test.tsx` (new — 2 AC gate tests)
+- `frontend/src/hooks/__tests__/useAnalysis.test.tsx` (rewritten — 22 supporting tests for new API)
+- `frontend/src/hooks/__tests__/useAnalysis.stall.test.tsx` (rewritten — 4 stall detection tests for new API)
+
+---
+
+## Change Log
+- 2026-03-22: useAnalysis hook, store-integrated API, 28 hook tests (Sai Chandan / Claude)
+
+---
+
+## Status
+review

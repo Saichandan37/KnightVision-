@@ -1,0 +1,27 @@
+# Production override — removes Ollama and switches to Groq.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+#
+# Requires GROQ_API_KEY to be set in .env.
+
+services:
+
+  # Assign Ollama to a local-only profile so it does not start in prod.
+  ollama:
+    profiles: ["local"]
+
+  backend:
+    # Clear the dev depends_on (which waits for ollama to be healthy).
+    depends_on: {}
+    environment:
+      LLM_DEFAULT_PROVIDER: groq
+
+  frontend:
+    # Pass the hosted backend URL at build time when deploying to Railway/Render.
+    # Leave empty for Docker Compose prod (Nginx proxy handles routing).
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ""

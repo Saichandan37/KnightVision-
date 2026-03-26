@@ -1,0 +1,38 @@
+stockfish:
+  path: null                  # null = auto-detect (/opt/homebrew/bin/stockfish on macOS, stockfish on Linux/Docker)
+  depth: 18                   # Analysis depth (10–22 recommended)
+  threads: 2                  # CPU threads for Stockfish
+  multipv: 3                  # Number of top candidate moves to return
+
+classification:
+  thresholds:
+    brilliant_max_cp_loss: 0  # Must also pass sacrifice detection
+    great_max_cp_loss: 5
+    best_max_cp_loss: 10
+    good_max_cp_loss: 20
+    inaccuracy_max_cp_loss: 50
+    mistake_max_cp_loss: 150
+    # blunder = anything above mistake threshold
+
+llm:
+  default_provider: "ollama"  # ollama | groq | huggingface
+  timeout_seconds: 10         # Max wait for LLM response before fallback
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "llama3.1:8b"
+  groq:
+    model: "llama3-8b-8192"
+  huggingface:
+    model: "mistralai/Mistral-7B-Instruct-v0.2"
+
+server:
+  host: "0.0.0.0"
+  port: 8000
+  log_level: "info"           # info | debug
+  cors_origins:
+    - "http://localhost:5173"  # Vite dev server
+    - "http://localhost:4173"  # Vite preview
+    - "http://localhost:3000"  # Docker frontend
+
+accuracy:
+  max_cp_scale: 300           # CP loss at which accuracy = 0%

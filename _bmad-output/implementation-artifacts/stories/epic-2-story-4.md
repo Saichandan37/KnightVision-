@@ -18,3 +18,39 @@ Given a 5-move test PGN, `run_analysis()` calls `on_move_result` exactly 5 times
 
 ## Relevant Skills
 Read `.claude/skills/bmad-dev-story.md` before implementing.
+
+---
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**Perspective fix for Black moves:** The Stockfish service returns `eval_cp` in White's perspective for *both* sides (after White's move the flip is applied; after Black's move the raw value is White's-perspective). To compute correct `cp_loss` for Black's plies, both `eval_before` and `eval_after` are negated (White's persp → Black's/mover's persp) before `max(0, eval_before - eval_after)`. This follows the explicit warning in story 2.2's implementation notes: "eval_before = -eval_after_previous is needed for correct cp_loss on Black's moves." The story 2.4 task spec (no negation) would produce inverted cp_loss for Black — the AC doesn't test this directly but correctness requires the negation.
+
+**StockfishService injection:** `run_analysis()` accepts an optional `stockfish_service` parameter (default None → create from config). Tests pass a mock to avoid real Stockfish subprocess overhead.
+
+**comment / comment_source fields:** MoveResult requires both fields. Orchestrator sets `comment=""` and `comment_source="fallback"` — LLM commentary is injected by the Epic 4 WebSocket layer.
+
+**Store sequencing:** `on_move_result` callback is called first (enables live streaming before persistence), then `game_store.append_move`. Status transitions: `analysing` → `complete` on success, `error` on any exception.
+
+**Accuracy formula:** `max(0.0, 100.0 - avg_cp_loss)` per side. Empty side (no moves) → 100.0.
+
+### Completion Notes
+✅ AC gate test passes. 97/97 total tests pass (8 new + 89 regression).
+AC test: `test_ac_five_move_game_callback_count_and_indices` — 5-ply PGN, callback called exactly 5 times with move_index [0,1,2,3,4], `AnalysisComplete.total_moves == 5` ✓
+
+---
+
+## File List
+- `backend/app/services/analysis_orchestrator.py` (new)
+- `backend/tests/test_analysis_orchestrator.py` (new — 8 tests including AC gate)
+
+---
+
+## Change Log
+- 2026-03-22: Analysis orchestrator — run_analysis(), perspective fix for Black cp_loss, status transitions, accuracy formula, AC gate + 7 supporting tests (Sai Chandan / Claude)
+
+---
+
+## Status
+review
