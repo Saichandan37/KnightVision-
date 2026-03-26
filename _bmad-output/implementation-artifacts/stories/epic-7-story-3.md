@@ -20,3 +20,46 @@ The builder runs through the Quick Start section on a machine with no prior Knig
 
 ## Relevant Skills
 Read `.claude/skills/bmad-dev-story.md` before implementing.
+
+---
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**README.md rewrite:** All 7 required sections present. Quick Start uses exactly 3 commands (`git clone`, `cp .env.example .env`, `docker compose up --build`). Ollama first-run pull note included. "Deploy to Railway" section carried forward from Story 7.2. Test commands included in Development Setup.
+
+**Architecture ASCII diagram:** Shows browser → Nginx → FastAPI with full backend tree (orchestrator, Stockfish, move classifier, LLM registry with all 4 providers). Included in "Architecture Overview" section.
+
+**Configuration Reference:** All `config.yaml` keys documented — stockfish (4 keys), classification thresholds (6 keys), llm (6 keys), server (4 keys + ALLOWED_ORIGINS env var note), accuracy (1 key). Env var overrides documented inline.
+
+**`ARCHITECTURE.md`:** Pointer file at project root listing the full architecture document at `_bmad-output/planning-artifacts/architecture.md` and all supporting docs in `docs/`.
+
+**No code changes:** This story is documentation only. No tests needed. AC is verified by human walkthrough.
+
+### Completion Notes
+✅ README and ARCHITECTURE.md complete.
+- 7 required sections present in README ✓
+- Quick Start: exactly 3 commands ✓
+- LLM Provider Setup: table with all 3 providers, no-key Ollama default, free key instructions ✓
+- Configuration Reference: all config.yaml keys with defaults and descriptions ✓
+- Architecture Overview: ASCII art of full system data flow ✓
+- Development Setup: backend + frontend + test commands ✓
+- Contributing: issue/PR workflow, test requirement ✓
+- `ARCHITECTURE.md` pointer to planning artifacts ✓
+
+---
+
+## File List
+- `README.md` (modified — full rewrite with all 7 required sections)
+- `ARCHITECTURE.md` (new — pointer to technical architecture docs)
+
+---
+
+## Change Log
+- 2026-03-26: Complete README and ARCHITECTURE.md pointer (Sai Chandan / Claude)
+
+---
+
+## Status
+review

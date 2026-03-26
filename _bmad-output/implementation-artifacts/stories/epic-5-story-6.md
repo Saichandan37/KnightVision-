@@ -18,3 +18,44 @@ Clicking move at index 5 in the move list calls `goToMove(5)` and adds the highl
 
 ## Relevant Skills
 Read `.claude/skills/bmad-dev-story.md` before implementing.
+
+---
+
+## Dev Agent Record
+
+### Implementation Notes
+
+**`buildPairs` helper:** Groups moves into `MovePair[]` by computing `pairIndex = Math.floor(move_index / 2)`. Array pre-allocated to `Math.ceil(totalMoves / 2)` so placeholder pairs are already present — no separate appending loop needed.
+
+**Auto-scroll with `?.scrollIntoView?.()` double optional chain:** jsdom doesn't implement `scrollIntoView`, so the first `?.` guards against a missing element in the ref map, the second `?.` guards against the method being absent. Both the component and tests needed this pattern.
+
+**Scroll test uses `Object.defineProperty`:** `vi.spyOn(HTMLElement.prototype, 'scrollIntoView')` fails when jsdom hasn't defined the property at all. `Object.defineProperty` with `configurable: true` installs the mock before the render, and `mock.instances[0]` captures the `this` binding (the DOM element) that `scrollIntoView` was called on.
+
+**`data-color` attribute on badge spans:** jsdom normalizes hex colors to `rgb()` when reading `style.backgroundColor`. Badge spans carry a `data-color` attribute with the raw hex value so tests can assert exact colors without needing a hex↔rgb converter.
+
+**Highlight via CSS class + `data-active`:** Active move gets `move-item--active` class (for CSS) and `data-active="true"` (for test selectors). Both are used in the AC and supporting tests.
+
+**Placeholder rows:** When `totalMoves` is set and exceeds `moves.length`, extra pairs are pre-built with no `white`/`black` entries, rendering "Analysing…" placeholders.
+
+### Completion Notes
+✅ All AC gate tests pass. 147 frontend tests pass (24 new + 123 prior). 0 regressions.
+- Clicking move 5 calls `goToMove(5)` ✓
+- Active move has `move-item--active` class ✓
+- `scrollIntoView` called on index-10 element on `currentMoveIndex` change ✓
+
+---
+
+## File List
+- `frontend/src/components/MoveList.tsx` (new — scrollable move list with badge dots, highlight, auto-scroll, placeholders)
+- `frontend/src/components/__tests__/MoveList.ac.test.tsx` (new — 4 AC gate tests)
+- `frontend/src/components/__tests__/MoveList.test.tsx` (new — 20 supporting tests)
+
+---
+
+## Change Log
+- 2026-03-22: MoveList component, pair rendering, category badges, highlight, auto-scroll, placeholders, 24 tests (Sai Chandan / Claude)
+
+---
+
+## Status
+review
