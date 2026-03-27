@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KnightVision — Product & Technical Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #ffffff;
+    --text:      #1a1a2e;
+    --subtle:    #4a5568;
+    --border:    #e2e8f0;
+    --accent:    #2563eb;
+    --accent-lt: #eff6ff;
+    --green:     #16a34a;
+    --amber:     #d97706;
+    --red:       #dc2626;
+    --teal:      #0d9488;
+    --purple:    #7c3aed;
+    --code-bg:   #f8fafc;
+    --tag-bg:    #f1f5f9;
+  }
+
+  html { font-size: 10pt; }
+
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 0;
+  }
+
+  /* ── Page structure ── */
+  .page { max-width: 760px; margin: 0 auto; padding: 48px 52px; }
+
+  /* ── Cover ── */
+  .cover {
+    min-height: 220px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+    border-radius: 12px;
+    padding: 48px 48px 40px;
+    margin-bottom: 40px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .cover::after {
+    content: '♞';
+    position: absolute;
+    right: 32px;
+    top: 24px;
+    font-size: 120px;
+    opacity: 0.08;
+    line-height: 1;
+  }
+  .cover .tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #93c5fd;
+    font-size: 8.5pt;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .cover h1 {
+    font-size: 32pt;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .cover .subtitle {
+    font-size: 12pt;
+    color: #93c5fd;
+    font-weight: 400;
+    margin-bottom: 28px;
+    max-width: 480px;
+  }
+  .cover-meta {
+    display: flex;
+    gap: 24px;
+    font-size: 8.5pt;
+    color: rgba(255,255,255,0.55);
+  }
+  .cover-meta span { display: flex; align-items: center; gap: 5px; }
+
+  /* ── Section headings ── */
+  h2 {
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--text);
+    margin: 36px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    letter-spacing: -0.01em;
+  }
+  h2 .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    font-size: 9pt;
+    font-weight: 700;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--text);
+    margin: 22px 0 8px;
+  }
+  h4 {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--subtle);
+    margin: 16px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  p { margin-bottom: 10px; color: var(--subtle); font-size: 10pt; }
+  strong { color: var(--text); font-weight: 600; }
+
+  /* ── Feature cards ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    background: var(--bg);
+  }
+  .card .icon {
+    font-size: 20px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .card h3 { font-size: 10.5pt; margin: 0 0 5px; }
+  .card p { font-size: 9pt; margin: 0; line-height: 1.5; }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 9.5pt; }
+  th {
+    background: var(--tag-bg);
+    color: var(--text);
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--subtle);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafafa; }
+  td code, th code { font-family: 'JetBrains Mono', monospace; font-size: 8.5pt; color: var(--accent); }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 12px 0;
+    color: #334155;
+  }
+  code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+    background: var(--tag-bg);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+
+  /* ── Badges ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 8pt;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .badge-brilliant { background: #ccfbf1; color: #0f766e; }
+  .badge-great     { background: #dbeafe; color: #1d4ed8; }
+  .badge-best      { background: #dcfce7; color: #15803d; }
+  .badge-good      { background: #ecfccb; color: #4d7c0f; }
+  .badge-inaccuracy{ background: #fef9c3; color: #a16207; }
+  .badge-mistake   { background: #fed7aa; color: #c2410c; }
+  .badge-blunder   { background: #fee2e2; color: #b91c1c; }
+
+  /* ── Architecture diagram ── */
+  .arch {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 22px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    line-height: 1.8;
+    margin: 14px 0;
+  }
+  .arch .comment { color: #64748b; }
+  .arch .hl      { color: #38bdf8; font-weight: 500; }
+  .arch .hl2     { color: #4ade80; }
+  .arch .hl3     { color: #fb923c; }
+  .arch .hl4     { color: #c084fc; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 14px 0;
+    font-size: 9.5pt;
+  }
+  .callout-blue  { background: var(--accent-lt); border-left: 4px solid var(--accent); }
+  .callout-green { background: #f0fdf4; border-left: 4px solid var(--green); }
+  .callout-amber { background: #fffbeb; border-left: 4px solid var(--amber); }
+  .callout p     { margin: 0; }
+  .callout strong { color: var(--text); }
+
+  /* ── Move category table ── */
+  .cat-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-cp { font-family: 'JetBrains Mono', monospace; font-size: 8.5pt; color: var(--subtle); min-width: 90px; }
+  .cat-desc { font-size: 9pt; color: var(--subtle); }
+
+  /* ── Stack pills ── */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .pill {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 8.5pt;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .pill.blue   { background: #eff6ff; border-color: #bfdbfe; color: var(--accent); }
+  .pill.green  { background: #f0fdf4; border-color: #bbf7d0; color: var(--green); }
+  .pill.purple { background: #faf5ff; border-color: #ddd6fe; color: var(--purple); }
+  .pill.amber  { background: #fffbeb; border-color: #fde68a; color: var(--amber); }
+
+  /* ── Two-column layout ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 14px 0; }
+  .two-col-60 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin: 14px 0; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 8.5pt;
+    color: #94a3b8;
+  }
+
+  /* ── Print ── */
+  @media print {
+    body { font-size: 10pt; }
+    .page { padding: 20px 28px; max-width: 100%; }
+    .cover { border-radius: 8px; page-break-after: avoid; }
+    h2 { page-break-after: avoid; }
+    .card-grid { page-break-inside: avoid; }
+    table { page-break-inside: avoid; }
+    .arch { page-break-inside: avoid; }
+    @page { margin: 14mm 12mm; size: A4; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══════════════ COVER ══════════════ -->
+  <div class="cover">
+    <div class="tag">Product &amp; Technical Overview</div>
+    <h1>KnightVision</h1>
+    <div class="subtitle">AI-powered chess game analysis — Stockfish accuracy scores, LLM coaching commentary, and a real-time review board in the browser.</div>
+    <div class="cover-meta">
+      <span>♟ Chess Analysis Platform</span>
+      <span>⚡ Real-time WebSocket Streaming</span>
+      <span>🤖 Multi-LLM Provider</span>
+      <span>📦 Docker Single-Command</span>
+    </div>
+  </div>
+
+  <!-- ══════════════ 1. WHAT IS KNIGHTVISION ══════════════ -->
+  <h2><span class="num">1</span> What is KnightVision?</h2>
+
+  <p>KnightVision is a full-stack chess game analysis tool that combines the world-class Stockfish chess engine with AI language models to deliver move-by-move coaching commentary. A player pastes a PGN game, clicks <strong>Analyse</strong>, and within seconds sees every move colour-coded by quality — Brilliant, Best, Inaccuracy, Blunder — alongside a coaching explanation, an evaluation bar, and the top alternative moves the engine recommended.</p>
+
+  <p>The goal is to make post-game analysis as accessible as a chess.com or Lichess review, but with the flexibility to run entirely locally (no cloud required) or swap in a free cloud LLM (Groq) when needed.</p>
+
+  <div class="callout callout-blue">
+    <p><strong>Core value proposition:</strong> Upload any PGN → get a fully annotated game with accuracy scores, move-quality badges, and plain-English coaching comments — in under 60 seconds — with zero setup beyond <code>docker compose up</code>.</p>
+  </div>
+
+  <!-- ══════════════ 2. KEY FEATURES ══════════════ -->
+  <h2><span class="num">2</span> Key Features</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="icon">♟</span>
+      <h3>Stockfish Move Analysis</h3>
+      <p>Every position evaluated at depth 18. Centipawn loss computed per move from the moving player's perspective. Top 3 alternatives returned for each position.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🤖</span>
+      <h3>AI Coaching Commentary</h3>
+      <p>LLM generates a 1–2 sentence plain-English explanation for every move. Supports Ollama (local), Groq, and HuggingFace. Falls back to templates if LLM times out.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🎨</span>
+      <h3>Colour-Coded Move List</h3>
+      <p>All 7 move categories displayed with distinct colours and badges. Move list is scrollable with auto-scroll to the current move. WCAG 2.1 AA contrast verified.</p>
+    </div>
+    <div class="card">
+      <span class="icon">📊</span>
+      <h3>Accuracy Scores</h3>
+      <p>White and Black accuracy percentages calculated across the full game. Displayed in the game header with colour-coded indicators (green ≥80%, amber 60–79%, red &lt;60%).</p>
+    </div>
+    <div class="card">
+      <span class="icon">⚡</span>
+      <h3>Real-Time Streaming</h3>
+      <p>Results stream via WebSocket as each move is analysed — no waiting for the whole game. Late-joining clients receive buffered replay instantly without animation delays.</p>
+    </div>
+    <div class="card">
+      <span class="icon">📱</span>
+      <h3>Responsive &amp; Accessible</h3>
+      <p>Fully responsive layout — desktop two-column, mobile bottom-sheet with swipe navigation. Keyboard nav (arrow keys, Space, Home, End). WCAG 2.1 AA compliant.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🔄</span>
+      <h3>Runtime LLM Switching</h3>
+      <p>Switch between Ollama, Groq, and HuggingFace at runtime via the UI dropdown — no server restart required. Provider health displayed live.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🐳</span>
+      <h3>Single-Command Docker</h3>
+      <p>Three services (backend, frontend, Ollama) start with one command. Ollama model is auto-pulled and cached in a Docker volume on first run.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ 3. MOVE CLASSIFICATION ══════════════ -->
+  <h2><span class="num">3</span> Move Classification System</h2>
+
+  <p>Every move is classified into one of <strong>7 quality tiers</strong> based on the centipawn loss — the difference between the engine's evaluation before and after the move, from the moving player's perspective.</p>
+
+  <div class="two-col">
+    <div>
+      <table>
+        <thead>
+          <tr><th>Badge</th><th>cp_loss threshold</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="badge badge-brilliant">Brilliant</span></td><td><code>= 0</code> + sacrifice</td><td>Zero loss + piece sacrifice detected</td></tr>
+          <tr><td><span class="badge badge-great">Great</span></td><td><code>≤ 5</code></td><td>Near-perfect move</td></tr>
+          <tr><td><span class="badge badge-best">Best</span></td><td><code>≤ 10</code></td><td>Engine's top recommendation</td></tr>
+          <tr><td><span class="badge badge-good">Good</span></td><td><code>≤ 20</code></td><td>Solid, slightly sub-optimal</td></tr>
+          <tr><td><span class="badge badge-inaccuracy">Inaccuracy</span></td><td><code>≤ 50</code></td><td>Noticeable error</td></tr>
+          <tr><td><span class="badge badge-mistake">Mistake</span></td><td><code>≤ 150</code></td><td>Significant error</td></tr>
+          <tr><td><span class="badge badge-blunder">Blunder</span></td><td><code>&gt; 150</code></td><td>Game-changing error</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="callout callout-amber" style="margin-top:0">
+        <p><strong>Brilliant detection:</strong> A move must have cp_loss = 0 AND involve a piece sacrifice (giving up material that isn't immediately recoverable). This prevents trivially recapturing moves from being labelled Brilliant.</p>
+      </div>
+      <div class="callout callout-green" style="margin-top:12px">
+        <p><strong>Configurable:</strong> All thresholds are adjustable in <code>config.yaml</code> under <code>classification.thresholds</code> — no code change needed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 4. LLM PROVIDERS ══════════════ -->
+  <h2><span class="num">4</span> LLM Provider System</h2>
+
+  <p>KnightVision's LLM layer is built around a <strong>pluggable provider registry</strong> with automatic fallback. All providers implement the same interface (<code>generate(prompt) → str</code> + <code>check_health() → bool</code>), making them interchangeable at runtime.</p>
+
+  <table>
+    <thead>
+      <tr><th>Provider</th><th>Model</th><th>Key Required</th><th>Best For</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Ollama</strong> (default)</td>
+        <td><code>llama3.1:8b</code></td>
+        <td>None — runs locally</td>
+        <td>Privacy, offline use, no API costs</td>
+      </tr>
+      <tr>
+        <td><strong>Groq</strong></td>
+        <td><code>llama3-8b-8192</code></td>
+        <td><code>GROQ_API_KEY</code> (free tier)</td>
+        <td>Fastest inference, hosted deployments</td>
+      </tr>
+      <tr>
+        <td><strong>HuggingFace</strong></td>
+        <td><code>Mistral-7B-Instruct-v0.2</code></td>
+        <td><code>HUGGINGFACE_API_KEY</code> (free)</td>
+        <td>Alternative cloud option</td>
+      </tr>
+      <tr>
+        <td><strong>Fallback</strong></td>
+        <td>Template engine</td>
+        <td>None — always available</td>
+        <td>Guaranteed comment if all LLMs fail</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Fallback Chain</h3>
+  <p>Every comment request goes through <code>generate_with_fallback()</code>: it tries the active provider, and if that fails (network error, timeout, no API key), automatically tries the next registered provider, finally falling back to a template comment. Analysis <strong>never fails</strong> due to an LLM being unavailable.</p>
+
+  <h3>10-Second Timeout</h3>
+  <p>Each LLM call has a 10-second timeout. If the model doesn't respond in time, the fallback kicks in immediately — preventing slow LLM responses from blocking the entire analysis pipeline.</p>
+
+  <!-- ══════════════ 5. ARCHITECTURE ══════════════ -->
+  <h2><span class="num">5</span> Architecture Overview</h2>
+
+  <p>KnightVision is a standard full-stack web application with a Python/FastAPI backend, a React/TypeScript frontend, and two sidecar services (Stockfish subprocess, Ollama container).</p>
+
+  <div class="arch">
+<span class="hl">Browser</span>  (React + TypeScript + Zustand)<br>
+│<br>
+│  POST /api/analysis/upload   ──→  202 Accepted { game_id }<br>
+│  WebSocket /ws/analysis/{id} ←──  move_result stream + analysis_complete<br>
+│  GET  /api/llm/status        ──→  provider health map<br>
+│<br>
+▼<br>
+<span class="hl2">Nginx</span>  (port 3000 → serves Vite build + proxies /api and /ws)<br>
+│<br>
+▼<br>
+<span class="hl">FastAPI Backend</span>  (Python 3.12, port 8000)<br>
+│<br>
+├── <span class="hl2">Analysis Orchestrator</span>  (per-game background task)<br>
+│   │<br>
+│   ├── <span class="hl2">PGN Parser</span>  (python-chess)  ──→  move list + metadata<br>
+│   │<br>
+│   ├── <span class="hl3">Stockfish Service</span>  (asyncio.to_thread)<br>
+│   │   └── UCI subprocess at depth 18, multipv 3<br>
+│   │       returns: cp_score, best_move, top_candidates<br>
+│   │<br>
+│   ├── <span class="hl2">Move Classifier</span>  ──→  category (7 tiers via cp_loss)<br>
+│   │<br>
+│   ├── <span class="hl4">LLM Provider Registry</span><br>
+│   │   ├── OllamaProvider     → http://ollama:11434<br>
+│   │   ├── GroqProvider       → api.groq.com<br>
+│   │   ├── HuggingFaceProvider→ api-inference.huggingface.co<br>
+│   │   └── FallbackProvider   → template comment (always available)<br>
+│   │<br>
+│   └── <span class="hl2">Opening Service</span>  ──→  ECO code + opening name<br>
+│<br>
+├── <span class="hl2">WebSocket Handler</span>  ──→  streams results to browser<br>
+│   ├── live stream:   buffered=false  → triggers board animation<br>
+│   ├── late-join:     buffered=true   → instant replay, no animation<br>
+│   └── heartbeat every 10s<br>
+│<br>
+└── <span class="hl2">In-Memory Game Store</span>  (game_id → status + moves + metadata)<br>
+<br>
+<span class="hl3">Ollama sidecar</span>  (port 11434, Docker volume: ollama_data)<br>
+    └── llama3.1:8b — local LLM inference, no cloud required
+  </div>
+
+  <!-- ══════════════ 6. TECH STACK ══════════════ -->
+  <h2><span class="num">6</span> Technology Stack</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>Backend</h3>
+      <div class="pills">
+        <span class="pill blue">Python 3.12</span>
+        <span class="pill blue">FastAPI</span>
+        <span class="pill blue">python-chess</span>
+        <span class="pill blue">Stockfish (UCI)</span>
+        <span class="pill blue">asyncio</span>
+        <span class="pill blue">Pydantic v2</span>
+        <span class="pill blue">WebSockets</span>
+        <span class="pill blue">httpx</span>
+        <span class="pill blue">pytest</span>
+      </div>
+
+      <h3 style="margin-top:16px">Infrastructure</h3>
+      <div class="pills">
+        <span class="pill amber">Docker Compose</span>
+        <span class="pill amber">Nginx</span>
+        <span class="pill amber">Ollama</span>
+        <span class="pill amber">Railway</span>
+      </div>
+    </div>
+    <div>
+      <h3>Frontend</h3>
+      <div class="pills">
+        <span class="pill green">React 18</span>
+        <span class="pill green">TypeScript</span>
+        <span class="pill green">Zustand 4</span>
+        <span class="pill green">Vite</span>
+        <span class="pill green">Tailwind CSS 3</span>
+        <span class="pill green">react-chessboard</span>
+        <span class="pill green">chess.js</span>
+        <span class="pill green">Vitest</span>
+        <span class="pill green">axe-core</span>
+      </div>
+
+      <h3 style="margin-top:16px">LLM Providers</h3>
+      <div class="pills">
+        <span class="pill purple">Ollama (local)</span>
+        <span class="pill purple">Groq API</span>
+        <span class="pill purple">HuggingFace</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ 7. DATA FLOW ══════════════ -->
+  <h2><span class="num">7</span> Request Data Flow</h2>
+
+  <p>A full game analysis follows this sequence from browser to results:</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Step</th><th>Component</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>User pastes PGN and clicks Analyse</td><td>UploadZone (React)</td><td>POST <code>/api/analysis/upload</code></td></tr>
+      <tr><td>2</td><td>PGN validated &amp; game_id assigned</td><td>FastAPI upload endpoint</td><td><code>202 { game_id }</code></td></tr>
+      <tr><td>3</td><td>Browser opens WebSocket connection</td><td><code>useAnalysis</code> hook</td><td>WS <code>/ws/analysis/{game_id}</code></td></tr>
+      <tr><td>4</td><td>PGN parsed into move list + metadata</td><td>python-chess parser</td><td>List of SAN moves + headers</td></tr>
+      <tr><td>5</td><td>Opening detected from ECO database</td><td>Opening Service</td><td>ECO code + opening name</td></tr>
+      <tr><td>6</td><td>Per move: Stockfish evaluates position</td><td>StockfishService (thread)</td><td>cp_score, best_move, candidates</td></tr>
+      <tr><td>7</td><td>cp_loss computed &amp; move classified</td><td>MoveClassifier</td><td>Category enum (7 tiers)</td></tr>
+      <tr><td>8</td><td>LLM generates coaching comment</td><td>ProviderRegistry</td><td>Comment string or fallback template</td></tr>
+      <tr><td>9</td><td>move_result streamed to browser</td><td>WebSocket handler</td><td><code>{ type: "move_result", ... }</code></td></tr>
+      <tr><td>10</td><td>Store updated, board &amp; list re-render</td><td>Zustand store</td><td>React components update live</td></tr>
+      <tr><td>11</td><td>analysis_complete with accuracy scores</td><td>WebSocket handler</td><td><code>{ white_accuracy, black_accuracy }</code></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════ 8. FRONTEND STATE ══════════════ -->
+  <h2><span class="num">8</span> Frontend State &amp; Components</h2>
+
+  <div class="two-col-60">
+    <div>
+      <h3>Zustand Store — analysisStore</h3>
+      <p>Single source of truth for all UI state. All components subscribe to slices of this store.</p>
+      <table>
+        <thead><tr><th>State field</th><th>Type</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>moves</code></td><td><code>MoveResult[]</code></td><td>All analysed moves</td></tr>
+          <tr><td><code>analysisStatus</code></td><td>6-state enum</td><td>idle → uploading → analysing → complete / error / stalled</td></tr>
+          <tr><td><code>gameId</code></td><td><code>string</code></td><td>Current game UUID</td></tr>
+          <tr><td><code>meta</code></td><td><code>GameMeta</code></td><td>Players, date, result, opening</td></tr>
+          <tr><td><code>activeProvider</code></td><td><code>LLMProvider</code></td><td>Selected LLM provider</td></tr>
+          <tr><td><code>providerHealth</code></td><td><code>Record</code></td><td>Health bool per provider</td></tr>
+          <tr><td><code>whiteAccuracy</code></td><td><code>number</code></td><td>White accuracy %</td></tr>
+          <tr><td><code>blackAccuracy</code></td><td><code>number</code></td><td>Black accuracy %</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h3>Key React Components</h3>
+      <table>
+        <thead><tr><th>Component</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>UploadZone</code></td><td>PGN input, drag-drop, validation</td></tr>
+          <tr><td><code>ReviewLayout</code></td><td>Root layout — desktop/mobile switch</td></tr>
+          <tr><td><code>Board</code></td><td>Chessboard + best-move arrow + swipe</td></tr>
+          <tr><td><code>EvalBar</code></td><td>Vertical evaluation bar</td></tr>
+          <tr><td><code>MoveList</code></td><td>Scrollable colour-coded move list</td></tr>
+          <tr><td><code>MoveDetailCard</code></td><td>Badge, eval delta, comment, candidates</td></tr>
+          <tr><td><code>PlaybackControls</code></td><td>⏮ ◀ ⏸/▶ ▶ ⏭ + move counter</td></tr>
+          <tr><td><code>GameHeader</code></td><td>Players, Elo, date, opening, accuracy</td></tr>
+          <tr><td><code>BottomSheet</code></td><td>Mobile slide-up move detail panel</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ 9. STREAMING & RESILIENCE ══════════════ -->
+  <h2><span class="num">9</span> Streaming &amp; Resilience</h2>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="icon">📡</span>
+      <h3>WebSocket Streaming</h3>
+      <p>Results are pushed to the browser as each move is processed — the board updates in real time. A 10-second heartbeat keeps the connection alive through proxies and firewalls.</p>
+    </div>
+    <div class="card">
+      <span class="icon">⏪</span>
+      <h3>Buffered Replay</h3>
+      <p>A client that reconnects mid-analysis immediately receives all prior moves with <code>buffered: true</code> — rendered instantly without animation — then seamlessly transitions to live streaming.</p>
+    </div>
+    <div class="card">
+      <span class="icon">⏱</span>
+      <h3>Stall Detection</h3>
+      <p>The frontend monitors time since last WebSocket message. If no message arrives in 30 seconds while analysis is active, status transitions to <em>stalled</em> and a warning banner is shown.</p>
+    </div>
+    <div class="card">
+      <span class="icon">🛡</span>
+      <h3>Per-Move Error Isolation</h3>
+      <p>If a single move fails (Stockfish error, LLM timeout), the error is isolated to that move — a fallback "Good" category and template comment are used — and analysis continues for all remaining moves.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ 10. ACCESSIBILITY ══════════════ -->
+  <h2><span class="num">10</span> Accessibility (WCAG 2.1 AA)</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>Colour Contrast</h3>
+      <p>All 7 badge colours verified at ≥ 4.5:1 contrast ratio against the dark background:</p>
+      <div style="margin-top:8px">
+        <div class="cat-row"><span class="badge badge-brilliant">Brilliant</span><span class="cat-cp">6.93:1</span><span class="cat-desc">#1baaa6 / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-great">Great</span><span class="cat-cp">7.00:1</span><span class="cat-desc">#5ca0d3 / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-best">Best</span><span class="cat-cp">8.37:1</span><span class="cat-desc">#6dba6a / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-good">Good</span><span class="cat-cp">9.04:1</span><span class="cat-desc">#96bc4b / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-inaccuracy">Inaccuracy</span><span class="cat-cp">11.80:1</span><span class="cat-desc">#f0c15c / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-mistake">Mistake</span><span class="cat-cp">7.34:1</span><span class="cat-desc">#e8834e / dark text</span></div>
+        <div class="cat-row"><span class="badge badge-blunder">Blunder</span><span class="cat-cp">5.20:1</span><span class="cat-desc">#ca3431 / white text</span></div>
+      </div>
+    </div>
+    <div>
+      <h3>Keyboard &amp; Screen Reader</h3>
+      <ul style="font-size:9.5pt; color:var(--subtle); padding-left:16px; line-height:1.9">
+        <li>← → Space Home End for playback navigation</li>
+        <li><code>:focus-visible</code> ring — 2px #5ca0d3, offset 2px</li>
+        <li>Move list items: <code>aria-label="Move N: SAN, category"</code></li>
+        <li>Move list items: <code>aria-pressed</code> for toggle state</li>
+        <li>All icon-only buttons have <code>aria-label</code></li>
+        <li>Board: piece icons are primary signal (not colour alone)</li>
+        <li>axe-core gate test: 0 critical/serious violations</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════ 11. DEPLOYMENT ══════════════ -->
+  <h2><span class="num">11</span> Deployment</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>Local Docker (Default)</h3>
+      <pre>git clone &lt;repo&gt; &amp;&amp; cd knightvision
+cp .env.example .env
+docker compose up --build</pre>
+      <p>Three services start: <strong>backend</strong> (port 8000), <strong>frontend</strong> (port 3000), <strong>Ollama</strong> (port 11434). The <code>llama3.1:8b</code> model (~4 GB) is pulled automatically on first run and cached in a Docker volume.</p>
+    </div>
+    <div>
+      <h3>Cloud (Railway + Groq)</h3>
+      <pre>railway init
+railway up
+# set in Railway dashboard:
+# GROQ_API_KEY=...
+# LLM_DEFAULT_PROVIDER=groq</pre>
+      <p>Backend deploys from <code>backend/Dockerfile</code>. Frontend deploys to Vercel/Netlify with <code>VITE_API_BASE_URL</code> pointing to the Railway backend URL.</p>
+    </div>
+  </div>
+
+  <h3>Prod Compose Override (no Ollama)</h3>
+  <pre>docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build</pre>
+  <p>Removes the Ollama sidecar and switches the default provider to Groq. Useful for low-memory machines or when a cloud LLM is preferred locally.</p>
+
+  <!-- ══════════════ 12. CONFIGURATION ══════════════ -->
+  <h2><span class="num">12</span> Configuration Reference</h2>
+
+  <table>
+    <thead><tr><th>config.yaml key</th><th>Default</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>stockfish.depth</code></td><td><code>18</code></td><td>Analysis depth (10–22). Higher = slower but more accurate.</td></tr>
+      <tr><td><code>stockfish.threads</code></td><td><code>2</code></td><td>CPU threads allocated to Stockfish subprocess</td></tr>
+      <tr><td><code>stockfish.multipv</code></td><td><code>3</code></td><td>Top candidate moves returned per position</td></tr>
+      <tr><td><code>stockfish.path</code></td><td><code>null</code></td><td>Auto-detect binary; set to explicit path if needed</td></tr>
+      <tr><td><code>llm.default_provider</code></td><td><code>"ollama"</code></td><td>Active provider at startup. Override with <code>LLM_DEFAULT_PROVIDER</code> env var</td></tr>
+      <tr><td><code>llm.timeout_seconds</code></td><td><code>10</code></td><td>LLM response timeout before fallback template</td></tr>
+      <tr><td><code>llm.ollama.model</code></td><td><code>llama3.1:8b</code></td><td>Ollama model name</td></tr>
+      <tr><td><code>llm.groq.model</code></td><td><code>llama3-8b-8192</code></td><td>Groq model name</td></tr>
+      <tr><td><code>server.cors_origins</code></td><td><code>[localhost:5173, ...]</code></td><td>Allowed CORS origins. Override with <code>ALLOWED_ORIGINS</code> env var (comma-separated)</td></tr>
+      <tr><td><code>accuracy.max_cp_scale</code></td><td><code>300</code></td><td>CP loss at which accuracy = 0%</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════ 13. NON-FUNCTIONAL REQUIREMENTS ══════════════ -->
+  <h2><span class="num">13</span> Performance &amp; Quality Targets</h2>
+
+  <table>
+    <thead><tr><th>Requirement</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Full game analysis (54 moves, depth 18)</td><td>&lt; 60 seconds</td></tr>
+      <tr><td>WebSocket first result after upload</td><td>&lt; 3 seconds</td></tr>
+      <tr><td>Board render / move animation</td><td>&lt; 100 ms</td></tr>
+      <tr><td>LLM timeout before fallback</td><td>10 seconds</td></tr>
+      <tr><td>Mobile board minimum size</td><td>300 × 300 px</td></tr>
+      <tr><td>Browser support</td><td>Chrome 90+, Firefox 90+, Safari 15+, Mobile Safari</td></tr>
+      <tr><td>Accessibility</td><td>WCAG 2.1 AA (axe-core gate: 0 critical/serious violations)</td></tr>
+      <tr><td>Frontend tests</td><td>289 tests, 0 regressions</td></tr>
+      <tr><td>Backend tests</td><td>269 tests, 0 regressions</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <hr />
+  <div class="footer">
+    <span>KnightVision — Product &amp; Technical Overview</span>
+    <span>Built with FastAPI · React · Stockfish · Ollama/Groq</span>
+    <span>March 2026</span>
+  </div>
+
+</div>
+</body>
+</html>

@@ -42,9 +42,13 @@ async function setChessValid(valid: boolean) {
   }
 }
 
+// Shared uploadPgn prop — tests that need custom behaviour override it inline
+const mockUploadPgn = vi.fn()
+
 beforeEach(async () => {
   useAnalysisStore.getState().reset()
   mockFetch.mockReset()
+  mockUploadPgn.mockReset()
   vi.clearAllMocks()
   await setChessValid(true)
 })
@@ -55,19 +59,19 @@ beforeEach(async () => {
 
 describe('structure', () => {
   it('renders upload-zone container', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('upload-zone')).toBeInTheDocument()
   })
 
   it('renders drop-area with placeholder text', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('drop-area')).toHaveTextContent(
       'Drop PGN file here or click to browse',
     )
   })
 
   it('renders textarea with placeholder "Or paste PGN text here"', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('pgn-textarea')).toHaveAttribute(
       'placeholder',
       'Or paste PGN text here',
@@ -75,17 +79,17 @@ describe('structure', () => {
   })
 
   it('renders submit button with label "Analyse"', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('btn-submit')).toHaveTextContent('Analyse')
   })
 
   it('renders file input that accepts .pgn', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('file-input')).toHaveAttribute('accept', '.pgn')
   })
 
   it('submit button has min-height of 44px (mobile tap target)', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     const btn = screen.getByTestId('btn-submit')
     expect(btn.style.minHeight).toBe('44px')
   })
@@ -97,18 +101,18 @@ describe('structure', () => {
 
 describe('drag-and-drop', () => {
   it('data-drag-active is false initially', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('drop-area').getAttribute('data-drag-active')).toBe('false')
   })
 
   it('data-drag-active becomes true on dragover', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.dragOver(screen.getByTestId('drop-area'))
     expect(screen.getByTestId('drop-area').getAttribute('data-drag-active')).toBe('true')
   })
 
   it('data-drag-active returns to false on dragleave', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.dragOver(screen.getByTestId('drop-area'))
     fireEvent.dragLeave(screen.getByTestId('drop-area'))
     expect(screen.getByTestId('drop-area').getAttribute('data-drag-active')).toBe('false')
@@ -121,14 +125,14 @@ describe('drag-and-drop', () => {
 
 describe('textarea', () => {
   it('updates value when typed into', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: '1. e4' } })
     expect((screen.getByTestId('pgn-textarea') as HTMLTextAreaElement).value).toBe('1. e4')
   })
 
   it('clears validation error when textarea changes', async () => {
     await setChessValid(false)
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: 'bad' } })
     await act(async () => { fireEvent.click(screen.getByTestId('btn-submit')) })
     expect(screen.getByTestId('validation-error')).toBeInTheDocument()
@@ -145,13 +149,13 @@ describe('textarea', () => {
 
 describe('validation error', () => {
   it('shows no error initially', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.queryByTestId('validation-error')).toBeNull()
   })
 
   it('shows error message on invalid PGN submit', async () => {
     await setChessValid(false)
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: 'bad' } })
     await act(async () => { fireEvent.click(screen.getByTestId('btn-submit')) })
     expect(screen.getByTestId('validation-error')).toHaveTextContent(
@@ -161,7 +165,7 @@ describe('validation error', () => {
 
   it('validation error has role="alert"', async () => {
     await setChessValid(false)
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: 'x' } })
     await act(async () => { fireEvent.click(screen.getByTestId('btn-submit')) })
     expect(screen.getByTestId('validation-error')).toHaveAttribute('role', 'alert')
@@ -169,7 +173,7 @@ describe('validation error', () => {
 
   it('error is absent after valid submission', async () => {
     mockFetch.mockReturnValue(new Promise(() => {}))
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     // First trigger an invalid error
     await setChessValid(false)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: 'bad' } })
@@ -191,8 +195,12 @@ describe('validation error', () => {
 
 describe('loading state', () => {
   it('shows loading spinner while uploading', async () => {
-    mockFetch.mockReturnValue(new Promise(() => {}))
-    render(<UploadZone />)
+    // uploadPgn sets status to uploading then hangs (simulates in-flight request)
+    const pendingUpload = vi.fn().mockImplementation(async () => {
+      useAnalysisStore.getState().setStatus('uploading')
+      return new Promise(() => {})
+    })
+    render(<UploadZone uploadPgn={pendingUpload} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: '1. e4 *' } })
     await act(async () => { fireEvent.click(screen.getByTestId('btn-submit')) })
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument()
@@ -200,15 +208,18 @@ describe('loading state', () => {
   })
 
   it('submit button is disabled while uploading', async () => {
-    mockFetch.mockReturnValue(new Promise(() => {}))
-    render(<UploadZone />)
+    const pendingUpload = vi.fn().mockImplementation(async () => {
+      useAnalysisStore.getState().setStatus('uploading')
+      return new Promise(() => {})
+    })
+    render(<UploadZone uploadPgn={pendingUpload} />)
     fireEvent.change(screen.getByTestId('pgn-textarea'), { target: { value: '1. e4 *' } })
     await act(async () => { fireEvent.click(screen.getByTestId('btn-submit')) })
     expect(screen.getByTestId('btn-submit')).toBeDisabled()
   })
 
   it('no loading spinner before submit', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.queryByTestId('loading-spinner')).toBeNull()
   })
 })
@@ -219,17 +230,17 @@ describe('loading state', () => {
 
 describe('accessibility', () => {
   it('drop-area has role="button"', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('drop-area')).toHaveAttribute('role', 'button')
   })
 
   it('submit button has aria-label "Analyse game"', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('btn-submit')).toHaveAttribute('aria-label', 'Analyse game')
   })
 
   it('textarea has aria-label', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
     expect(screen.getByTestId('pgn-textarea')).toHaveAttribute('aria-label')
   })
 })
