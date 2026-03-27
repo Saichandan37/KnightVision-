@@ -37,7 +37,7 @@ function buildWsUrl(gameId: string): string {
  *   Buffered replay messages do NOT change shouldAnimate.
  */
 export function useAnalysis() {
-  const { setGameId, appendMove, setStatus, setAccuracy } = useAnalysisStore()
+  const { setGameId, appendMove, setStatus, setAccuracy, setMeta } = useAnalysisStore()
   const analysisStatus = useAnalysisStore((state) => state.analysisStatus)
   const [shouldAnimate, setShouldAnimate] = useState(false)
 
@@ -85,6 +85,23 @@ export function useAnalysis() {
 
       setGameId(gameId)
       lastMessageAt.current = Date.now()
+
+      // Fetch game meta (player names, opening, etc.) — the orchestrator parses
+      // PGN synchronously at task start, so meta is available within ~500ms.
+      const fetchMeta = async () => {
+        const apiBase = ((import.meta.env['VITE_API_BASE_URL'] as string | undefined) ?? '').replace(/\/$/, '')
+        for (let attempt = 0; attempt < 5; attempt++) {
+          await new Promise(r => setTimeout(r, 400 * (attempt + 1)))
+          try {
+            const r = await fetch(`${apiBase}/api/analysis/${gameId}`)
+            if (r.ok) {
+              const d = await r.json() as { meta?: unknown }
+              if (d.meta) { setMeta(d.meta as Parameters<typeof setMeta>[0]); return }
+            }
+          } catch { /* network error — retry */ }
+        }
+      }
+      fetchMeta()
 
       const ws = new WebSocket(buildWsUrl(gameId))
       wsRef.current = ws

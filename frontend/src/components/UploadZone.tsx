@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { Chess } from 'chess.js'
-import { useAnalysis } from '../hooks/useAnalysis'
+import { useAnalysisStore } from '../store/analysisStore'
 
 function isValidPgn(text: string): boolean {
   try {
@@ -19,14 +19,18 @@ function isValidPgn(text: string): boolean {
  * Validates the PGN client-side with chess.js before calling uploadPgn.
  * Shows an inline error on invalid input and a loading spinner while uploading.
  */
-export function UploadZone() {
+interface UploadZoneProps {
+  uploadPgn: (pgn: string) => Promise<void>
+}
+
+export function UploadZone({ uploadPgn }: UploadZoneProps) {
   const [pgnText, setPgnText] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
   const [backendError, setBackendError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const { uploadPgn, analysisStatus } = useAnalysis()
+  const analysisStatus = useAnalysisStore((state) => state.analysisStatus)
   const isLoading = analysisStatus === 'uploading' || analysisStatus === 'analysing'
 
   const handleSubmit = useCallback(async () => {

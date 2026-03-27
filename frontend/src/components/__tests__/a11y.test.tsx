@@ -138,12 +138,12 @@ describe('interactive element accessible names', () => {
   })
 
   it('UploadZone submit button has aria-label', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={vi.fn()} />)
     expect(screen.getByTestId('btn-submit')).toHaveAttribute('aria-label', 'Analyse game')
   })
 
   it('UploadZone drop area has role=button and aria-label', () => {
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={vi.fn()} />)
     const drop = screen.getByTestId('drop-area')
     expect(drop).toHaveAttribute('role', 'button')
     expect(drop.getAttribute('aria-label')).toBeTruthy()

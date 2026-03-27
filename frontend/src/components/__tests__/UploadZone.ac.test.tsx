@@ -53,10 +53,13 @@ beforeEach(async () => {
 
 describe('AC: UploadZone PGN submission', () => {
   it('valid PGN: calls uploadPgn and status transitions to "uploading"', async () => {
-    // fetch returns a pending promise — status stays "uploading"
-    mockFetch.mockReturnValue(new Promise(() => {}))
+    // uploadPgn prop: sets status to uploading and simulates the fetch call
+    const mockUploadPgn = vi.fn().mockImplementation(async () => {
+      useAnalysisStore.getState().setStatus('uploading')
+      mockFetch('http://localhost:8000/api/analysis/upload')
+    })
 
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={mockUploadPgn} />)
 
     fireEvent.change(screen.getByTestId('pgn-textarea'), {
       target: { value: '1. e4 e5 *' },
@@ -79,7 +82,7 @@ describe('AC: UploadZone PGN submission', () => {
       }),
     }))
 
-    render(<UploadZone />)
+    render(<UploadZone uploadPgn={vi.fn()} />)
 
     fireEvent.change(screen.getByTestId('pgn-textarea'), {
       target: { value: 'this is not pgn' },
